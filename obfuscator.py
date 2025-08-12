@@ -254,14 +254,23 @@ class FunctionRenamer(ast.NodeTransformer):
         return ''.join(random.choices(string.ascii_letters, k=length))
 
     def visit_FunctionDef(self, node):
-        # 子ノードを先に処理（Post-order風）
+        # 先に子ノードを処理
         self.generic_visit(node)
 
+        # 特殊メソッドはリネームしない（__xxx__ の形式）
+        if node.name.startswith("__") and node.name.endswith("__"):
+            return node
+        
+        if node.name == "main":
+            self.rename_map[node.name] = node.name
+            return node
+        
         # 新しい名前を生成してマッピング
         new_name = self._random_name()
         self.rename_map[node.name] = new_name
         node.name = new_name
         return node
+
 
     def visit_Call(self, node):
         # 呼び出し側の名前変更
@@ -269,7 +278,6 @@ class FunctionRenamer(ast.NodeTransformer):
         if isinstance(node.func, ast.Name) and node.func.id in self.rename_map:
             node.func.id = self.rename_map[node.func.id]
         return node
-    
 
 def obfuscate_python_file(file_path, output_path=None):
     with open(file_path, "r", encoding="utf-8") as f:
