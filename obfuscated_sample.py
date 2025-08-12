@@ -1,60 +1,60 @@
-def eVbhLKer(data):
-    return ''.join((chr(c - 6) for c in data))
+def KXiJbWRz(data):
+    return ''.join((chr(c - 5) for c in data))
 
 class MyClass:
 
     def __init__(self, value):
         self.value = value
 
-    def sZErkyot(self):
-        jjZHXRII = 0
+    def nadVGdtP(self):
+        mXPQvAbr = 0
         while True:
-            if jjZHXRII == 0:
+            if mXPQvAbr == 0:
                 print(f'Value is {self.value}')
-                jjZHXRII = 1
-            if jjZHXRII == 1:
+                mXPQvAbr = 1
+            if mXPQvAbr == 1:
                 break
 
     def __str__(self):
         return f'MyClass with value {self.value}'
 
-def ojDUurDB():
-    kEzMoGCN = 0
+def TqWmlOep():
+    CbpOjUEh = 0
     while True:
-        if kEzMoGCN == 0:
-            print(eVbhLKer([19 + 59, 58 + 49, 98 + 16, 61 + 53, 70 + 47, 37 + 13, 1 + 37, 329 ^ 308, 45 + 72, 121 ^ 1, 80 + 34, 704 ^ 682, 305 ^ 278]))
-            kEzMoGCN = 1
-        if kEzMoGCN == 1:
+        if CbpOjUEh == 0:
+            print(KXiJbWRz([61 + 16, 58 + 48, 96 + 17, 62 + 51, 409 ^ 493, 761 ^ 712, 347 ^ 382, 260 ^ 376, 31 + 85, 85 + 34, 63 ^ 78, 15 + 90, 20 + 18]))
+            CbpOjUEh = 1
+        if CbpOjUEh == 1:
             break
 
-def tlfaVwOi():
-    obj = MyClass(16 + 26)
-    nuohtlbb = 0
+def WQxgxqNj():
+    obj = MyClass(405 ^ 447)
+    amrLOsep = 0
     while True:
-        if nuohtlbb == 0:
-            obj.normal_method()
-            nuohtlbb = 1
-        if nuohtlbb == 1:
+        if amrLOsep == 0:
+            obj.nadVGdtP()
+            amrLOsep = 1
+        if amrLOsep == 1:
             break
-    agbOrpNg = 0
+    mqgsIWYi = 0
     while True:
-        if agbOrpNg == 0:
+        if mqgsIWYi == 0:
             print(obj)
-            agbOrpNg = 1
-        if agbOrpNg == 1:
+            mqgsIWYi = 1
+        if mqgsIWYi == 1:
             break
-    VMrXVEfq = 0
+    kwqEgSlC = 0
     while True:
-        if VMrXVEfq == 0:
-            ojDUurDB()
-            VMrXVEfq = 1
-        if VMrXVEfq == 1:
+        if kwqEgSlC == 0:
+            TqWmlOep()
+            kwqEgSlC = 1
+        if kwqEgSlC == 1:
             break
-if __name__ == eVbhLKer([63 + 38, 97 + 4, 19 + 96, 37 + 66, 903 ^ 1000, 261 ^ 369, 732 ^ 697, 59 ^ 94]):
-    rmrEqPdq = 0
+if __name__ == KXiJbWRz([46 ^ 74, 594 ^ 566, 492 ^ 414, 45 + 57, 492 ^ 386, 43 + 72, 79 + 21, 221 ^ 185]):
+    OZiFCyMY = 0
     while True:
-        if rmrEqPdq == 0:
-            tlfaVwOi()
-            rmrEqPdq = 1
-        if rmrEqPdq == 1:
+        if OZiFCyMY == 0:
+            WQxgxqNj()
+            OZiFCyMY = 1
+        if OZiFCyMY == 1:
             break
