@@ -3,13 +3,13 @@ import random
 import string
 import sys
 
-
 # 解析対象のPythonコードファイル名
 FILENAME = "sample.py"
 
 def generate_random_name(length=8):
     return ''.join(random.choices(string.ascii_letters, k=length))
 
+#文字列の変換してるとこ
 class HardStringObfuscator(ast.NodeTransformer):
     def __init__(self):
         self.helper_added = False
@@ -40,19 +40,6 @@ def _decode_str(data):
             return ast.copy_location(new_node, node)
         return node
 
-    def visit_Str(self, node):
-        # f-string内の文字列は変換しない
-        if node.s:
-            if isinstance(getattr(node, 'parent', None), ast.JoinedStr):
-                return node
-            encoded = [ord(c) + self.offset for c in node.s]
-            new_node = ast.Call(
-                func=ast.Name(id="_decode_str", ctx=ast.Load()),
-                args=[ast.List(elts=[ast.Constant(value=v) for v in encoded], ctx=ast.Load())],
-                keywords=[]
-            )
-            return ast.copy_location(new_node, node)
-        return node
 
     def generic_visit(self, node):
         # 子ノードに親情報を付与
@@ -60,6 +47,7 @@ def _decode_str(data):
             child.parent = node
         return super().generic_visit(node)
 
+#数値の変換してるとこ
 class NumberObfuscator(ast.NodeTransformer):
     def visit_Constant(self, node):
         if isinstance(node.value, int) and node.value > 10:
@@ -84,29 +72,8 @@ class NumberObfuscator(ast.NodeTransformer):
             return ast.copy_location(new_node, node)
         return node
 
-    def visit_Num(self, node):
-        if isinstance(node.n, int) and node.n > 10:
-            if random.choice([True, False]):
-                # 加算式
-                a = random.randint(1, node.n - 1)
-                b = node.n - a
-                new_node = ast.BinOp(
-                    left=ast.Num(n=a),
-                    op=ast.Add(),
-                    right=ast.Num(n=b)
-                )
-            else:
-                # XOR式
-                a = random.randint(1, 1000)
-                b = node.n ^ a
-                new_node = ast.BinOp(
-                    left=ast.Num(n=a),
-                    op=ast.BitXor(),
-                    right=ast.Num(n=b)
-                )
-            return ast.copy_location(new_node, node)
-        return node
-
+# 制御フローのフラット化
+# if文をwhileループに変換してフラット化する
 class ControlFlowFlattener(ast.NodeTransformer):
     def visit_If(self, node):
         if not node.orelse or not isinstance(node.parent, ast.Module):
@@ -166,6 +133,7 @@ class ControlFlowFlattener(ast.NodeTransformer):
             child.parent = node
         return super().generic_visit(node)
 
+# 単一文をフラット化する
 class SingleStatementFlattener(ast.NodeTransformer):
     def visit_Expr(self, node):
         # すでにフラット化されている場合はスキップ
@@ -218,6 +186,7 @@ class SingleStatementFlattener(ast.NodeTransformer):
             child.parent = node
         return super().generic_visit(node)
 
+# ビルトイン関数や例外を変数に置き換える(ctfによくあるやつ)
 class BuiltinObfuscator(ast.NodeTransformer):
     def __init__(self):
         self.builtins_var = generate_random_name()
@@ -245,6 +214,7 @@ class BuiltinObfuscator(ast.NodeTransformer):
                 )
         return node
 
+# 特殊メソッド以外の名前解決
 class FunctionRenamer(ast.NodeTransformer):
     def __init__(self):
         self.rename_map = {}
@@ -280,6 +250,7 @@ class FunctionRenamer(ast.NodeTransformer):
             node.attr = self.rename_map[node.attr]
         return node
 
+# インラインで展開する
 class DecodeCallInliner(ast.NodeTransformer):
     def __init__(self, func_name="_decode_str"):
         self.func_name = func_name
@@ -363,83 +334,83 @@ class DecodeCallInliner(ast.NodeTransformer):
 
         return node
 
+# if文に対してランダムな真条件を定義しておいて、ここからランダムに生成
+class DeadCodeGenerator:
+    def __init__(self, available_vars):
+        self.available_vars = available_vars
+
+    def random_true_condition(self):
+        var = random.choice(self.available_vars)
+
+        patterns = [
+            lambda v: ast.Compare(left=ast.Name(id=v, ctx=ast.Load()), ops=[ast.Eq()], comparators=[ast.Name(id=v, ctx=ast.Load())]),
+            lambda v: ast.Compare(left=ast.Constant(value=5), ops=[ast.Lt()], comparators=[ast.Constant(value=10)]),
+            lambda v: ast.Compare(left=ast.Constant(value=100), ops=[ast.Gt()], comparators=[ast.Constant(value=10)]),
+            lambda v: ast.BoolOp(op=ast.Or(), values=[ast.Constant(value=True), ast.Constant(value=False)]),
+            lambda v: ast.UnaryOp(op=ast.Not(), operand=ast.Constant(value=False)),
+            lambda v: ast.Compare(left=ast.Constant(value="x"), ops=[ast.NotEq()], comparators=[ast.Constant(value="y")]),
+            lambda v: ast.Compare(left=ast.BinOp(left=ast.Constant(value=1), op=ast.BitOr(), right=ast.Constant(value=2)),
+                                  ops=[ast.Gt()], comparators=[ast.Constant(value=0)])
+        ]
+        return random.choice(patterns)(var)
+# 大量ダミー関数投入
 class UltraMassiveObfuscator:
-    def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=150, nest_depth=20):
+    def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=150, nest_depth=20, available_vars=None):
         self.flatten_repeat = flatten_repeat
         self.string_obf_repeat = string_obf_repeat
         self.dummy_repeat = dummy_repeat
         self.nest_depth = nest_depth
+        if available_vars is None:
+            # 変数名の候補を用意（膨張時に死にコードの条件に使う）
+            self.available_vars = ['var_' + ''.join(random.choices(string.ascii_letters, k=5)) for _ in range(50)]
+        else:
+            self.available_vars = available_vars
+        self.dead_code_gen = DeadCodeGenerator(self.available_vars)
 
     def _generate_dummy_func(self):
         name = ''.join(random.choices(string.ascii_letters, k=12))
         arg = ''.join(random.choices(string.ascii_letters, k=5))
         var = ''.join(random.choices(string.ascii_letters, k=6))
 
-        # 変数や定数をランダム化
         loop_limit = random.randint(5, 15)
         increment = random.choice([1, 2, 3])
         threshold = random.randint(50, 150)
 
-        # 制御構造の種類もランダムに変えられるように（例：forループのrange, whileループの条件など）
         body_code = f"""def {name}({arg}):
-        {var} = 0
-        if {arg} > {random.randint(0, 5)}:
-            {var} += {random.randint(1, 3)}
+    {var} = 0
+    if {arg} > {random.randint(0, 5)}:
+        {var} += {random.randint(1, 3)}
+    else:
+        {var} -= {random.randint(1, 3)}
+
+    i = 0
+    while i < {loop_limit}:
+        if i % {random.choice([2,3,4])} == 0:
+            {var} += i * {increment}
         else:
-            {var} -= {random.randint(1, 3)}
+            {var} -= i
+        i += {increment}
 
-        i = 0
-        while i < {loop_limit}:
-            if i % {random.choice([2,3,4])} == 0:
-                {var} += i * {increment}
-            else:
-                {var} -= i
-            i += {increment}
+    for j in range({random.randint(1, loop_limit)}):
+        if j == {loop_limit} // {random.choice([2,3,4])}:
+            continue
+        {var} += j
 
-        for j in range({random.randint(1, loop_limit)}):
-            if j == {loop_limit} // {random.choice([2,3,4])}:
-                continue
-            {var} += j
+    while {var} < {threshold}:
+        {var} += {increment}
 
-        while {var} < {threshold}:
-            {var} += {increment}
-
-        return {var}
-    """
-
+    return {var}
+"""
         return ast.parse(body_code).body[0]
 
     def _generate_dummy_assign(self):
-        var = ''.join(random.choices(string.ascii_letters, k=8))
+        var = random.choice(self.available_vars)
         val = random.randint(0, 100)
         assign = ast.Assign(
             targets=[ast.Name(id=var, ctx=ast.Store())],
             value=ast.Constant(value=val)
         )
         return assign
-
-    def _generate_dummy_while(self, depth=5):
-        var = ''.join(random.choices(string.ascii_letters, k=6))
-        # 深いwhileループネストを作る
-        node = ast.Pass()
-        for _ in range(depth):
-            node = ast.While(
-                test=ast.Constant(value=True),
-                body=[
-                    node,
-                    ast.If(
-                        test=ast.Compare(
-                            left=ast.Constant(value=random.randint(0, 10)),
-                            ops=[ast.Eq()],
-                            comparators=[ast.Constant(value=5)]
-                        ),
-                        body=[ast.Break()],
-                        orelse=[]
-                    )
-                ],
-                orelse=[]
-            )
-        return node
 
     def _add_nested_ifs(self, node):
         assign_count = random.randint(1, 10)
@@ -448,41 +419,38 @@ class UltraMassiveObfuscator:
         current = node
         for i in range(self.nest_depth):
             if i == self.nest_depth - random.randint(1, 10):
-                body = assigns + [current]  # 無駄代入を先に挿入
+                body = assigns + [current]
             else:
                 body = [current]
 
             current = ast.If(
-                test=ast.Constant(value=True),
+                test=self.dead_code_gen.random_true_condition(),
                 body=body,
                 orelse=[]
             )
         return current
 
-
-    def _add_useless_assigns(self, node, count=random.randint(1, 10)):
+    def _add_useless_assigns(self, node, count=None):
+        if count is None:
+            count = random.randint(1, 10)
         assigns = [self._generate_dummy_assign() for _ in range(count)]
         useless_if = ast.If(
-            test=ast.Constant(value=True),  # 条件はTrueなので常に実行される
+            test=self.dead_code_gen.random_true_condition(),
             body=assigns,
             orelse=[]
         )
 
         if isinstance(node, ast.Module):
-            # Moduleのbodyに無駄なif文を挿入
             node.body = [useless_if] + node.body
             return node
         else:
-            # それ以外はリスト化して先頭に無駄なif文を追加
             return [useless_if, node]
 
     def insert_useless_assign_randomly(self, node):
-            if hasattr(node, 'body') and isinstance(node.body, list):
-                dummy_assign = self._generate_dummy_assign()
-                insert_pos = random.randint(0, len(node.body))
-                node.body.insert(insert_pos, dummy_assign)
-
-
+        if hasattr(node, 'body') and isinstance(node.body, list):
+            dummy_assign = self._generate_dummy_assign()
+            insert_pos = random.randint(0, len(node.body))
+            node.body.insert(insert_pos, dummy_assign)
 
     def apply(self, tree):
         # 大量ダミー関数投入
@@ -490,7 +458,7 @@ class UltraMassiveObfuscator:
             dummy = self._generate_dummy_func()
             tree.body.insert(0, dummy)
 
-        # 文字列読化を多重にかける
+        # 文字列難読化多重適用
         for _ in range(self.string_obf_repeat):
             string_obfuscator = HardStringObfuscator()
             tree = string_obfuscator.visit(tree)
