@@ -10,7 +10,6 @@ FILENAME = "sample.py"
 def generate_random_name(length=8):
     return ''.join(random.choices(string.ascii_letters, k=length))
 
-
 class HardStringObfuscator(ast.NodeTransformer):
     def __init__(self):
         self.helper_added = False
@@ -260,7 +259,7 @@ class FunctionRenamer(ast.NodeTransformer):
         # 特殊メソッドはリネームしない（__xxx__ の形式）
         if node.name.startswith("__") and node.name.endswith("__"):
             return node
-        
+
         # 新しい名前を生成してマッピング
         new_name = self._random_name()
         self.rename_map[node.name] = new_name
@@ -281,6 +280,194 @@ class FunctionRenamer(ast.NodeTransformer):
             node.attr = self.rename_map[node.attr]
         return node
 
+class DecodeCallInliner(ast.NodeTransformer):
+    def __init__(self, func_name="_decode_str"):
+        self.func_name = func_name
+        self.found_funcdef = None
+
+    def visit_Module(self, node):
+        # まず関数定義を探す
+        for n in node.body:
+            if isinstance(n, ast.FunctionDef) and n.name == self.func_name:
+                self.found_funcdef = n
+                break
+        self.generic_visit(node)
+        # 関数定義は削除する
+        node.body = [n for n in node.body if not (isinstance(n, ast.FunctionDef) and n.name == self.func_name)]
+        return node
+
+    def visit_Call(self, node):
+        # _decode_str(...) の呼び出しをインライン展開する
+        self.generic_visit(node)
+        if isinstance(node.func, ast.Name) and node.func.id == self.func_name:
+            # 引数リストを取得
+            if len(node.args) != 1:
+                return node  # 引数1つ以外は変えない
+
+            arg = node.args[0]
+            if not isinstance(arg, ast.List):
+                return node  # リスト以外は変えない
+
+            # c - 1 の代わりに複雑な演算を作る関数
+            def make_complex_expr(c):
+                # c を受け取って chr( ((c ^ k1) - k2 + k3) ) みたいにする
+                k1 = random.randint(1, 20)
+                k2 = random.randint(1, 20)
+                k3 = random.randint(0, 5)
+                return ast.Call(
+                    func=ast.Name(id='chr', ctx=ast.Load()),
+                    args=[ast.BinOp(
+                        left=ast.BinOp(
+                            left=ast.BinOp(
+                                left=ast.Name(id=c, ctx=ast.Load()),
+                                op=ast.BitXor(),
+                                right=ast.Constant(value=k1)
+                            ),
+                            op=ast.Sub(),
+                            right=ast.Constant(value=k2)
+                        ),
+                        op=ast.Add(),
+                        right=ast.Constant(value=k3))
+                ],
+                    keywords=[]
+                )
+
+            # リストの各要素名を固定した変数名にする（c0, c1, ...）
+            element_vars = []
+            elements = []
+            for i, elt in enumerate(arg.elts):
+                var_name = f'c{i}'
+                element_vars.append(var_name)
+                elements.append(ast.Assign(
+                    targets=[ast.Name(id=var_name, ctx=ast.Store())],
+                    value=elt
+                ))
+
+            # 各 c_i について make_complex_expr(c_i) を呼び出し
+            char_exprs = [make_complex_expr(name) for name in element_vars]
+
+            # ''.join([...]) のASTを作成
+            join_call = ast.Call(
+                func=ast.Attribute(
+                    value=ast.Constant(value=''),
+                    attr='join',
+                    ctx=ast.Load()
+                ),
+                args=[ast.List(elts=char_exprs, ctx=ast.Load())],
+                keywords=[]
+            )
+
+            # 変数割り当て文＋joinをまとめてAST化し、置換
+            # (変数宣言と ''.join(...) を1つのExprノード配列で返すため、複数文に展開可能なvisit_Callでリスト返し)
+            return elements + [join_call]
+
+        return node
+
+class UltraMassiveObfuscator:
+    def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=150, nest_depth=20):
+        self.flatten_repeat = flatten_repeat
+        self.string_obf_repeat = string_obf_repeat
+        self.dummy_repeat = dummy_repeat
+        self.nest_depth = nest_depth
+
+    def _generate_dummy_func(self):
+        name = ''.join(random.choices(string.ascii_letters, k=12))
+        var = ''.join(random.choices(string.ascii_letters, k=6))
+        body = ast.parse(f"""
+def {name}():
+    {var} = 0
+    for i in range(100):
+        {var} += i % 5
+    if {var} > 10:
+        {var} = {var} ^ 3
+    else:
+        {var} += 7
+    return {var}
+""").body[0]
+        return body
+
+    def _generate_dummy_assign(self):
+        var = ''.join(random.choices(string.ascii_letters, k=8))
+        val = random.randint(0, 100)
+        assign = ast.Assign(
+            targets=[ast.Name(id=var, ctx=ast.Store())],
+            value=ast.Constant(value=val)
+        )
+        return assign
+
+    def _generate_dummy_while(self, depth=5):
+        var = ''.join(random.choices(string.ascii_letters, k=6))
+        # 深いwhileループネストを作る
+        node = ast.Pass()
+        for _ in range(depth):
+            node = ast.While(
+                test=ast.Constant(value=True),
+                body=[
+                    node,
+                    ast.If(
+                        test=ast.Compare(
+                            left=ast.Constant(value=random.randint(0, 10)),
+                            ops=[ast.Eq()],
+                            comparators=[ast.Constant(value=5)]
+                        ),
+                        body=[ast.Break()],
+                        orelse=[]
+                    )
+                ],
+                orelse=[]
+            )
+        return node
+
+    def _add_nested_ifs(self, node):
+        current = node
+        for _ in range(self.nest_depth):
+            # 無意味に if True: でネスト
+            current = ast.If(
+                test=ast.Constant(value=True),
+                body=[current],
+                orelse=[]
+            )
+        return current
+
+    def _add_useless_assigns(self, node, count=30):
+        assigns = [self._generate_dummy_assign() for _ in range(count)]
+        # ノードの前に無駄な代入をまとめて挿入
+        if isinstance(node, ast.Module):
+            node.body = assigns + node.body
+        else:
+            # それ以外はノードをリストにして先頭に代入を挿入
+            node = [*assigns, node]
+        return node
+
+    def apply(self, tree):
+        # 1. 大量ダミー関数投入
+        for _ in range(self.dummy_repeat):
+            dummy = self._generate_dummy_func()
+            tree.body.insert(0, dummy)
+
+        # 2. 文字列難読化を多重にかける
+        for _ in range(self.string_obf_repeat):
+            string_obfuscator = HardStringObfuscator()
+            tree = string_obfuscator.visit(tree)
+            ast.fix_missing_locations(tree)
+
+        # 3. 制御フローのフラット化多重適用
+        for _ in range(self.flatten_repeat):
+            tree = ControlFlowFlattener().visit(tree)
+            ast.fix_missing_locations(tree)
+            tree = SingleStatementFlattener().visit(tree)
+            ast.fix_missing_locations(tree)
+
+        # 4. 無駄な入れ子ifを大量に付加
+        tree.body = [self._add_nested_ifs(stmt) for stmt in tree.body]
+
+        # 5. モジュール先頭に無駄な代入連発
+        tree = self._add_useless_assigns(tree, count=100)
+
+
+        ast.fix_missing_locations(tree)
+        return tree
+
 def obfuscate_python_file(file_path, output_path=None):
     with open(file_path, "r", encoding="utf-8") as f:
         source_code = f.read()
@@ -292,6 +479,9 @@ def obfuscate_python_file(file_path, output_path=None):
     tree = ControlFlowFlattener().visit(tree)
     ast.fix_missing_locations(tree)
 
+    inline= DecodeCallInliner()
+    tree = inline.visit(tree)
+    ast.fix_missing_locations(tree)
 
     string_obfuscator = HardStringObfuscator()
     tree = string_obfuscator.visit(tree)
@@ -308,6 +498,9 @@ def obfuscate_python_file(file_path, output_path=None):
     tree = function_renamer.visit(tree)
     ast.fix_missing_locations(tree)
 
+    over_obf = UltraMassiveObfuscator(flatten_repeat=40, string_obf_repeat=40, dummy_repeat=40)
+    tree = ast.parse(source_code)
+    tree = over_obf.apply(tree)
 
     # AST → Pythonコードへ戻す
     new_code = ast.unparse(tree)
