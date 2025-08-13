@@ -2,7 +2,7 @@ import ast
 import random
 import string
 from dead_code_generator import DeadCodeGenerator
-from string_obfuscator import HardStringObfuscator
+from string_obfuscator import CompiledStringObfuscator as HardStringObfuscator
 from control_flow_flattener import ControlFlowFlattener
 from single_statement_flattener import SingleStatementFlattener
 

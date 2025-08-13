@@ -4,7 +4,7 @@ import sys
 # 各種難読化クラスをインポート
 from control_flow_flattener import ControlFlowFlattener
 from decode_call_inliner import DecodeCallInliner
-from string_obfuscator import HardStringObfuscator
+from string_obfuscator import CompiledStringObfuscator as HardStringObfuscator
 from number_obfuscator import NumberObfuscator
 from single_statement_flattener import SingleStatementFlattener
 from function_renamer import FunctionRenamer
@@ -68,7 +68,7 @@ def obfuscate_python_file(file_path, output_path=None):
     # 8. match文によるフラット化
     tree = MatchFlattener().visit(tree)
     ast.fix_missing_locations(tree)
-    
+
     # ASTをPythonコードへ変換
     new_code = ast.unparse(tree)
 
