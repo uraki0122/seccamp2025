@@ -506,9 +506,6 @@ class UltraMassiveObfuscator:
         # 無駄な入れ子ifを大量に付加
         tree.body = [self._add_nested_ifs(stmt) for stmt in tree.body]
 
-        # モジュール先頭に無駄な代入連発
-        tree = self._add_useless_assigns(tree, count=100)
-
         ast.fix_missing_locations(tree)
         return tree
 
