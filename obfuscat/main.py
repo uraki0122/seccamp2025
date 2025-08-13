@@ -9,6 +9,7 @@ from number_obfuscator import NumberObfuscator
 from single_statement_flattener import SingleStatementFlattener
 from function_renamer import FunctionRenamer
 from ultra_massive_obfuscator import UltraMassiveObfuscator
+from match_Flattener import MatchFlattener
 
 def obfuscate_python_file(file_path, output_path=None):
     """
@@ -64,6 +65,10 @@ def obfuscate_python_file(file_path, output_path=None):
     over_obf = UltraMassiveObfuscator(flatten_repeat=40, string_obf_repeat=40, dummy_repeat=40)
     tree = over_obf.apply(tree)
 
+    # 8. match文によるフラット化
+    tree = MatchFlattener().visit(tree)
+    ast.fix_missing_locations(tree)
+    
     # ASTをPythonコードへ変換
     new_code = ast.unparse(tree)
 
