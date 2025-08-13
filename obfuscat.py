@@ -372,19 +372,42 @@ class UltraMassiveObfuscator:
 
     def _generate_dummy_func(self):
         name = ''.join(random.choices(string.ascii_letters, k=12))
+        arg = ''.join(random.choices(string.ascii_letters, k=5))
         var = ''.join(random.choices(string.ascii_letters, k=6))
-        body = ast.parse(f"""
-def {name}():
-    {var} = 0
-    for i in range(100):
-        {var} += i % 5
-    if {var} > 10:
-        {var} = {var} ^ 3
-    else:
-        {var} += 7
-    return {var}
-""").body[0]
-        return body
+
+        # 変数や定数をランダム化
+        loop_limit = random.randint(5, 15)
+        increment = random.choice([1, 2, 3])
+        threshold = random.randint(50, 150)
+
+        # 制御構造の種類もランダムに変えられるように（例：forループのrange, whileループの条件など）
+        body_code = f"""def {name}({arg}):
+        {var} = 0
+        if {arg} > {random.randint(0, 5)}:
+            {var} += {random.randint(1, 3)}
+        else:
+            {var} -= {random.randint(1, 3)}
+
+        i = 0
+        while i < {loop_limit}:
+            if i % {random.choice([2,3,4])} == 0:
+                {var} += i * {increment}
+            else:
+                {var} -= i
+            i += {increment}
+
+        for j in range({random.randint(1, loop_limit)}):
+            if j == {loop_limit} // {random.choice([2,3,4])}:
+                continue
+            {var} += j
+
+        while {var} < {threshold}:
+            {var} += {increment}
+
+        return {var}
+    """
+
+        return ast.parse(body_code).body[0]
 
     def _generate_dummy_assign(self):
         var = ''.join(random.choices(string.ascii_letters, k=8))
@@ -419,51 +442,72 @@ def {name}():
         return node
 
     def _add_nested_ifs(self, node):
+        assign_count = random.randint(1, 10)
+        assigns = [self._generate_dummy_assign() for _ in range(assign_count)]
+
         current = node
-        for _ in range(self.nest_depth):
-            # 無意味に if True: でネスト
+        for i in range(self.nest_depth):
+            if i == self.nest_depth - random.randint(1, 10):
+                body = assigns + [current]  # 無駄代入を先に挿入
+            else:
+                body = [current]
+
             current = ast.If(
                 test=ast.Constant(value=True),
-                body=[current],
+                body=body,
                 orelse=[]
             )
         return current
 
-    def _add_useless_assigns(self, node, count=30):
+
+    def _add_useless_assigns(self, node, count=random.randint(1, 10)):
         assigns = [self._generate_dummy_assign() for _ in range(count)]
-        # ノードの前に無駄な代入をまとめて挿入
+        useless_if = ast.If(
+            test=ast.Constant(value=True),  # 条件はTrueなので常に実行される
+            body=assigns,
+            orelse=[]
+        )
+
         if isinstance(node, ast.Module):
-            node.body = assigns + node.body
+            # Moduleのbodyに無駄なif文を挿入
+            node.body = [useless_if] + node.body
+            return node
         else:
-            # それ以外はノードをリストにして先頭に代入を挿入
-            node = [*assigns, node]
-        return node
+            # それ以外はリスト化して先頭に無駄なif文を追加
+            return [useless_if, node]
+
+    def insert_useless_assign_randomly(self, node):
+            if hasattr(node, 'body') and isinstance(node.body, list):
+                dummy_assign = self._generate_dummy_assign()
+                insert_pos = random.randint(0, len(node.body))
+                node.body.insert(insert_pos, dummy_assign)
+
+
 
     def apply(self, tree):
-        # 1. 大量ダミー関数投入
+        # 大量ダミー関数投入
         for _ in range(self.dummy_repeat):
             dummy = self._generate_dummy_func()
             tree.body.insert(0, dummy)
 
-        # 2. 文字列難読化を多重にかける
+        # 文字列読化を多重にかける
         for _ in range(self.string_obf_repeat):
             string_obfuscator = HardStringObfuscator()
             tree = string_obfuscator.visit(tree)
             ast.fix_missing_locations(tree)
 
-        # 3. 制御フローのフラット化多重適用
+        # 制御フローのフラット化多重適用
         for _ in range(self.flatten_repeat):
             tree = ControlFlowFlattener().visit(tree)
             ast.fix_missing_locations(tree)
             tree = SingleStatementFlattener().visit(tree)
             ast.fix_missing_locations(tree)
 
-        # 4. 無駄な入れ子ifを大量に付加
+        # 無駄な入れ子ifを大量に付加
         tree.body = [self._add_nested_ifs(stmt) for stmt in tree.body]
 
-        # 5. モジュール先頭に無駄な代入連発
+        # モジュール先頭に無駄な代入連発
         tree = self._add_useless_assigns(tree, count=100)
-
 
         ast.fix_missing_locations(tree)
         return tree
