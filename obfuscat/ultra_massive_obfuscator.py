@@ -6,6 +6,10 @@ from string_obfuscator import CompiledStringObfuscator as HardStringObfuscator
 from control_flow_flattener import ControlFlowFlattener
 from single_statement_flattener import SingleStatementFlattener
 
+# 文字列の難読化、制御フローのフラット化、
+# ダミーコードの挿入、ネストされたif文の追加
+# 変数の定義を必ず先頭に入れることでNameErrorを防止し
+# さらに、デッドコードの生成
 class UltraMassiveObfuscator:
     def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=100, nest_depth=20, available_vars=None):
         self.flatten_repeat = flatten_repeat

@@ -1,6 +1,6 @@
 import ast
 import random
-
+# ダミーのバイトコードを挿入するためのクラスです
 class DummyBytecodeInjector:
     def __init__(self):
         self.dummy_payloads = [

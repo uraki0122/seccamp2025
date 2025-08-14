@@ -1,6 +1,6 @@
 import ast
 from utils import generate_random_name
-
+# 組み込み関数を難読化するためのクラス（特殊メソッドは難読化の対象外なため__builtins__を使用）
 class BuiltinObfuscator(ast.NodeTransformer):
     def __init__(self):
         self.builtins_var = generate_random_name()

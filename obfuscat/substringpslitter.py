@@ -1,6 +1,6 @@
 import ast
 import random
-
+# 文字列リテラルを複数の部分文字列に分割し、使用時に ''.join([...]) で結合するように変換するクラス
 class SubstringSplitter(ast.NodeTransformer):
     """
     文字列リテラルを複数の部分文字列に分割し、

@@ -1,7 +1,7 @@
 import ast
 import random
 import string
-
+# 関数名をランダムに変更するためのクラス
 class FunctionRenamer(ast.NodeTransformer):
     def __init__(self):
         self.rename_map = {}

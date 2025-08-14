@@ -2,7 +2,7 @@ import ast
 import random
 import marshal
 
-
+# 文字列を難読化するためのクラス
 class CompiledStringObfuscator(ast.NodeTransformer):
     """
     _decode_str をコンパイルして marshal に埋め込み、実行時に types.FunctionType で復元する。

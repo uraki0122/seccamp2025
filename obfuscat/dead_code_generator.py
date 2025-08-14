@@ -1,6 +1,6 @@
 import ast
 import random
-
+# ランダムな条件を生成してデッドコードを作成する
 class DeadCodeGenerator:
     def __init__(self, available_vars):
         self.available_vars = available_vars if available_vars else ['x'] # Fallback

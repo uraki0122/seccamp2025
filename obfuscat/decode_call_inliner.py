@@ -1,6 +1,7 @@
 import ast
 import random
 
+# デコード関数の呼び出しをインライン化するためのクラスです
 class DecodeCallInliner(ast.NodeTransformer):
     def __init__(self, func_name="_decode_str"):
         self.func_name = func_name
