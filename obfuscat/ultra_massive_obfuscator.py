@@ -61,7 +61,7 @@ class UltraMassiveObfuscator:
         return ast.Assign(targets=[ast.Name(id=var, ctx=ast.Store())], value=ast.Constant(value=val))
 
     def _add_nested_ifs(self, node):
-        assign_count = random.randint(1, 10)
+        assign_count = random.randint(1, 5)
         assigns = [self._generate_dummy_assign() for _ in range(assign_count)]
         current = node
         for i in range(self.nest_depth):

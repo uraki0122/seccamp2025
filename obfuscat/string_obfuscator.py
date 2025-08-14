@@ -1,9 +1,7 @@
 import ast
 import random
 import marshal
-import types
-import random
-import string
+
 
 class CompiledStringObfuscator(ast.NodeTransformer):
     """

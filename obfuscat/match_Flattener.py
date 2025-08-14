@@ -1,6 +1,5 @@
 import ast
 import random
-from utils import generate_random_name
 
 class MatchFlattener(ast.NodeTransformer):
     def __init__(self, max_depth=5):

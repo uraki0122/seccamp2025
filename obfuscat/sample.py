@@ -17,6 +17,8 @@ def hoge():
     print(obj)
     hello()
 
+print("This is a test script for obfuscation.")
+
 if __name__ == "__main__":
     hoge()
 
