@@ -26,7 +26,7 @@ def obfuscate_python_file(file_path, output_path=None):
     # AST 解析
     tree = ast.parse(source_code)
 
-        # RC4チェック関数生成
+    # RC4チェック関数生成
     key_bytes = b"mysecretkey"
     check_data = b"checkdata"
     target_bytes = b"expectedoutput"

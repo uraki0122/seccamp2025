@@ -1,6 +1,6 @@
 import ast
 from utils import generate_random_name
-
+# 単一のステートメントをフラット化するためのクラス
 class SingleStatementFlattener(ast.NodeTransformer):
     def visit_Expr(self, node):
         if hasattr(node, '_flattened'):

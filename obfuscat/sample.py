@@ -1,3 +1,4 @@
+# 難読化対象となるPythonコード
 def greet(name):
     if len(name) > 5:
         print("^^")
