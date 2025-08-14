@@ -1,6 +1,6 @@
 import ast
 import random
-
+# 数値を難読化するためのクラス
 class NumberObfuscator(ast.NodeTransformer):
     def visit_Constant(self, node):
         if isinstance(node.value, int) and node.value > 10:

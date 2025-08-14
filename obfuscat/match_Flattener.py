@@ -1,6 +1,6 @@
 import ast
 import random
-
+# ASTのif文をmatch文に変換するためのクラス
 class MatchFlattener(ast.NodeTransformer):
     def __init__(self, max_depth=5):
         self.max_depth = max_depth
