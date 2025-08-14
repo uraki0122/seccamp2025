@@ -7,7 +7,7 @@ from control_flow_flattener import ControlFlowFlattener
 from single_statement_flattener import SingleStatementFlattener
 
 class UltraMassiveObfuscator:
-    def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=150, nest_depth=20, available_vars=None):
+    def __init__(self, flatten_repeat=50, string_obf_repeat=50, dummy_repeat=100, nest_depth=20, available_vars=None):
         self.flatten_repeat = flatten_repeat
         self.string_obf_repeat = string_obf_repeat
         self.dummy_repeat = dummy_repeat
@@ -57,7 +57,7 @@ class UltraMassiveObfuscator:
 
     def _generate_dummy_assign(self):
         var = random.choice(self.available_vars)
-        val = random.randint(0, 100)
+        val = random.randint(0, 50)
         return ast.Assign(targets=[ast.Name(id=var, ctx=ast.Store())], value=ast.Constant(value=val))
 
     def _add_nested_ifs(self, node):

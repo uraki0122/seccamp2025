@@ -1,24 +1,32 @@
-class MyClass:
-    def __init__(self, value):
-        self.value = value
+def greet(name):
+    if len(name) > 5:
+        print("^^")
+    else:
+        print("Hello World")
 
-    def normal_method(self):
-        print(f"Value is {self.value}")
+def factorial(n):
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
 
-    def __str__(self):
-        return f"MyClass with value {self.value}"
+def encode_message(message):
+    encoded = ""
+    for c in message:
+        encoded += chr(ord(c) + 3)
+    return encoded
 
-def hello():
-    print("Hello, world!")
-#^^
-def hoge():
-    obj = MyClass(42)
-    obj.normal_method()
-    print(obj)
-    hello()
+def main():
+    user = "Alice"
+    greet(user)
 
-print("This is a test script for obfuscation.")
+    number = 5
+    fact = factorial(number)
+    print(f"The factorial of {number} is {fact}")
+
+    secret = "TopSecret"
+    encoded = encode_message(secret)
+    print(f"Encoded message: {encoded}")
 
 if __name__ == "__main__":
-    hoge()
-
+    main()

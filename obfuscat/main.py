@@ -13,6 +13,7 @@ from ultra_massive_obfuscator import UltraMassiveObfuscator
 from match_Flattener import MatchFlattener
 from substringpslitter import SubstringSplitter
 from rc4_checker_generator import RC4CheckGenerator
+from dummy_bytecode_injector import DummyBytecodeInjector
 
 def obfuscate_python_file(file_path, output_path=None):
     """
@@ -66,7 +67,9 @@ def obfuscate_python_file(file_path, output_path=None):
     tree = MatchFlattener().visit(tree)
     ast.fix_missing_locations(tree)
 
-    # 8. 色々
+    # 8. ダミーコードの挿入
+    injector = DummyBytecodeInjector()
+    tree = injector.inject_into_tree(tree)
     over_obf = UltraMassiveObfuscator(flatten_repeat=40, string_obf_repeat=40, dummy_repeat=40)
     tree = over_obf.apply(tree)
     ast.fix_missing_locations(tree)
