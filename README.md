@@ -46,7 +46,7 @@ Pythonコードを対象とした **AST（抽象構文木）ベースの難読�
 
 ## ディレクトリ構成
 
-'''
+```
 .
 ├── __pycache__
 │   ├── control_flow_flattener.cpython-313.pyc
@@ -82,8 +82,8 @@ Pythonコードを対象とした **AST（抽象構文木）ベースの難読�
 ├── substringpslitter.py
 ├── ultra_massive_obfuscator.py
 └── utils.py
+```
 
-'''
 ---
 
 ## 使い方
